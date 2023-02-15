@@ -13,7 +13,7 @@ import java.util.UUID
  */
 case class EventEntity(id: UUID,
                        content: String,
-                       state: StateEntity) extends TEntity
+                       stateId: UUID) extends TEntity
 
 /**
  * Объект компаньон для связи таблицы БД и классом отображения
@@ -24,11 +24,10 @@ object EventEntity extends SQLSyntaxSupport[EventEntity] {
   val ev: QuerySQLSyntaxProvider[SQLSyntaxSupport[EventEntity], EventEntity] = EventEntity.syntax("ev")
   val evC: ColumnName[EventEntity] = EventEntity.column
 
-  def apply(r: ResultName[StateEntity])
-           (rs: WrappedResultSet): EventEntity =
+  def apply(r: ResultName[EventEntity])(rs: WrappedResultSet): EventEntity =
     new EventEntity(
-      id = UUID.fromString(rs.get(column.id)),
-      content = rs.string(column.content),
-      state = StateEntity(r)(rs)
+      id = UUID.fromString(rs.get(r.id)),
+      content = rs.string(r.content),
+      stateId = UUID.fromString(rs.get(r.stateId))
     )
 }

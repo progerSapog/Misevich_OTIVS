@@ -11,4 +11,4 @@ import java.util.UUID
  */
 case class Event(id: UUID,
                  content: String,
-                 state: State) extends TDomain
+                 stateId: UUID) extends TDomain

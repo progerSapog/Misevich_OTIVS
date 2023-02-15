@@ -23,7 +23,7 @@ object EventDAO extends TEventDAO {
         .namedValues(
           evC.id -> row.id,
           evC.content -> row.content,
-          evC.state -> row.state.id
+          evC.stateId -> row.stateId
         )
     }.update.apply()
 
@@ -34,14 +34,14 @@ object EventDAO extends TEventDAO {
    */
   override def multiInsert(rows: Seq[EventEntity])
                           (implicit session: DBSession): Unit = {
-    val batchParams: Seq[Seq[Any]] = rows.map(row => Seq(row.id, row.content, row.state.id))
+    val batchParams: Seq[Seq[Any]] = rows.map(row => Seq(row.id, row.content, row.stateId))
 
     withSQL {
       insertInto(EventEntity)
         .namedValues(
           evC.id -> sqls.?,
           evC.content -> sqls.?,
-          evC.state -> sqls.?
+          evC.stateId -> sqls.?
         )
     }.batch(batchParams: _*).apply()
   }
@@ -59,7 +59,7 @@ object EventDAO extends TEventDAO {
         .join(StateEntity as st)
         .on(ev.id, st.id)
         .where.eq(ev.id, id)
-    }.map(rs => EventEntity(st.resultName)(rs)).single.apply()
+    }.map(EventEntity(ev.resultName)).single.apply()
 
   /**
    * Выборка множества записей из таблицы events
@@ -77,13 +77,11 @@ object EventDAO extends TEventDAO {
                         (implicit session: DBSession): Seq[EventEntity] =
     withSQL {
       select.all(ev).from(EventEntity as ev)
-        .join(StateEntity as st)
-        .on(ev.id, st.id)
         .orderBy(SQLSyntax.createUnsafely(orderBy))
         .append(SQLSyntax.createUnsafely(sort))
         .limit(limit)
         .offset(offset)
-    }.map(rs => EventEntity(st.resultName)(rs)).list.apply()
+    }.map(EventEntity(ev.resultName)).list.apply()
 
   /**
    * Изменение записи в таблице Event
@@ -97,7 +95,7 @@ object EventDAO extends TEventDAO {
         .set(
           evC.id -> row.id,
           evC.content -> row.content,
-          evC.state -> row.state.id
+          evC.stateId -> row.stateId
         )
         .where.eq(evC.id, row.id)
     }.update.apply()

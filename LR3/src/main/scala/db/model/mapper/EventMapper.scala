@@ -17,7 +17,7 @@ object EventMapper extends TEventMapper {
     Event(
       id = entity.id,
       content = entity.content,
-      state = StateMapper.entity2domain(entity.state)
+      stateId = entity.stateId
     )
 
   /**
@@ -30,6 +30,6 @@ object EventMapper extends TEventMapper {
     EventEntity(
       id = model.id,
       content = model.content,
-      state = StateMapper.model2entity(model.state)
+      stateId = model.stateId
     )
 }
