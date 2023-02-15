@@ -1,25 +1,12 @@
-import db.models.dao.{EventDAO, EventEntity, StateDAO, StateEntity}
-import scalikejdbc.DB
+import db.model.service.{EventService, RuleService, StateService}
 import scalikejdbc.config.DBs
-
-import java.util.UUID
 
 object Test extends App {
   DBs.setupAll()
 
-  //  DB localTx { implicit session =>
-  //    StateDAO.insert(
-  //      StateEntity(
-  //        UUID.randomUUID(),
-  //        "AAAAAAAAAAAA"
-  //      )
-  //    )
-  //  }
+  println(StateService.selectAll())
+  println(EventService.selectAll())
+  println(RuleService.selectAll())
 
-  println(
-    DB readOnly { implicit session =>
-      EventDAO.selectAll()
-    }
-  )
 
 }

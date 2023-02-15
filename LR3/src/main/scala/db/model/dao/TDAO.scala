@@ -1,5 +1,6 @@
-package db.models.dao
+package db.model.dao
 
+import db.model.entity.{EventEntity, RuleEntity, StateEntity, TEntity}
 import scalikejdbc.{DBSession, ParameterBinderFactory}
 
 import java.util.UUID
@@ -9,7 +10,7 @@ import java.util.UUID
  *
  * @tparam T тип сущности
  */
-trait TDAO[T <: TEntity] {
+sealed trait TDAO[T <: TEntity] {
   implicit val uuidFactory: ParameterBinderFactory[UUID] = ParameterBinderFactory[UUID] {
     value => (stmt, idx) => stmt.setObject(idx, value)
   }
@@ -27,7 +28,7 @@ trait TDAO[T <: TEntity] {
    *
    * @param rows записи для вставки
    */
-  def insertMulti(rows: Seq[T])
+  def multiInsert(rows: Seq[T])
                  (implicit session: DBSession): Unit
 
   /**
@@ -42,10 +43,10 @@ trait TDAO[T <: TEntity] {
   /**
    * Выборка множества записей из таблицы
    *
-   * @param limit   кол-во записей выборк
+   * @param limit   кол-во записей выборки
    * @param offset  отступ от первой записи
    * @param orderBy поле, по которому будет производится сортировка
-   * @param sort    порядок сортирвоки
+   * @param sort    порядок сортировки
    * @return коллекцию найденных записей
    */
   def selectAll(limit: Int = 100,
@@ -70,3 +71,9 @@ trait TDAO[T <: TEntity] {
   def deleteById(id: UUID)
                 (implicit session: DBSession): Unit
 }
+
+trait TEventDAO extends TDAO[EventEntity]
+
+trait TRuleDAO extends TDAO[RuleEntity]
+
+trait TStateDAO extends TDAO[StateEntity]

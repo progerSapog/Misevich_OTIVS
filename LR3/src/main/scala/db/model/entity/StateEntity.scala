@@ -1,12 +1,21 @@
-package db.models.dao
+package db.model.entity
 
 import scalikejdbc._
 
 import java.util.UUID
 
+/**
+ * Класс - отображение записей в таблице states
+ *
+ * @param id   UUID primary key
+ * @param name varchar(255)
+ */
 case class StateEntity(id: UUID,
                        name: String) extends TEntity
 
+/**
+ * Объект компаньон для связи таблицы БД и классом отображения
+ */
 object StateEntity extends SQLSyntaxSupport[StateEntity] {
   override val tableName = "states"
 
