@@ -1,8 +1,12 @@
+import db.model.service.{ EventService, RuleService, StateService }
+import scalikejdbc.config.DBs
+
 import java.awt._
+import java.util.UUID
 import javax.swing.{ JButton, JFrame, JLabel, JPanel }
 
-object Lab2OTIVS extends App{
-  
+object Main extends App {
+  DBs.setupAll()
   def getConstraints(
                       gridx:Int,
                       gridy:Int,
@@ -21,9 +25,9 @@ object Lab2OTIVS extends App{
   
   
   
-  class EventDriver(events: Map[Int,String], sequence:Map[Int,(Int,Int)]){
-    val revertedEvents: Map[String, Int ] = for((k,v)<- events) yield (v, k)
-    var current: String = events.getOrElse(1, throw new IllegalArgumentException("event list must contain 0 event"))
+  class EventDriver(events: Map[UUID,String], sequence:Map[UUID,(UUID,UUID)],first:UUID){
+    val revertedEvents: Map[String, UUID ] = for((k,v)<- events) yield (v, k)
+    var current: String = events.getOrElse(first, throw new IllegalArgumentException("event list must not contain 0 event"))
     def move(isR:Boolean): Unit = {
       val i = revertedEvents(current)
       current = if(isR) events(sequence(i)._2) else events(sequence(i)._1)
@@ -34,12 +38,13 @@ object Lab2OTIVS extends App{
       else events(sequence(i)._1)
     }
     def isLeave: Boolean = !sequence.contains(revertedEvents(current))
-    def curN: Int = revertedEvents(current)
-    def nextN(isR:Boolean): Int = revertedEvents(next(isR))
+    def curN: UUID = revertedEvents(current)
+    def nextN(isR:Boolean): UUID = revertedEvents(next(isR))
   }
   
   object EventDriver{
-    def apply( events: Map[ Int, String ], sequence: Map[ Int, (Int, Int) ] ): EventDriver = new EventDriver(events, sequence)
+    def apply( events: Map[ UUID, String ], sequence: Map[ UUID, (UUID, UUID) ], first: UUID ): EventDriver = new
+        EventDriver(events, sequence, first)
     val RIGHT = true
     val LEFT = false
   }
@@ -56,34 +61,21 @@ object Lab2OTIVS extends App{
               windowSize._1,
               windowSize._2)
   }
+  val _events = EventService.selectAll()
+  val events = _events.map(e=>e.id->e.content).toMap
+  //получили пачки event->n,y
+  val sequence = RuleService.selectAll()
+                         .map(r=>r.eventId->(r.r2,r.r1)).toMap
+  //первый стейт
+  val fstate = StateService.selectAll().find(_.name == "Начально событие").get
+  println(fstate)
   
-  //инит
-  val events = Map(
-    1 -> "Компьютер включен в розетку?",
-    2 -> "Требуется включить компьютер в розетку.",
-    3 -> "Розетка подключена к сети?",
-    4 -> "Требуется подключить розетку к сети, или включить компьютер в работающую розетку.",
-    5 -> "При нажатии кнопки включения издаёт звуки? (Шум куллера)",
-    6 -> "Напряжение на материнской плате есть?",
-    7 -> "Биппер издаёт звуки?",
-    8 -> "Неисправен блок питания,с малой вероятностью может быть неисправна материнская плата",
-    9 -> "Скорее всего неисправна материнская плата или процессор Требуется более детальный анализ, обратитесь к специалисту.",
-    10 -> "Биппер встроен в материнскую плату?",
-    11 -> "Требуется прослушать сигнал биппера, Найти в документации значение сигнала...- или обратиться к специалисту.",
-    12 -> "Требуется подключить внешнее звуковое устройство, прослушать сигнал биппера, Найти в документации значение сигнала...- или обратиться к специалисту.",
-    13 -> "Неисправна материнская плата."
-  )
+  //первый event
+  val first = _events.find(fstate.id==_.stateId)
+  println(s"first = ${ first }")
   
-  val sequence = Map(
-    1->(2,3),
-    3->(4,5),
-    5->(6,7),
-    6->(8,9),
-    7->(10,11),
-    10->(12,13)
-  )
   
-  val eventDriver = EventDriver(events,sequence)
+  val eventDriver = EventDriver(events,sequence,first.get.id)
   
   var nextAction = false
   
@@ -97,11 +89,11 @@ object Lab2OTIVS extends App{
   
   
   def renew(): Unit = {
-    curEventLabel.setText(s"S${ eventDriver.curN } ${eventDriver.current}")
+    curEventLabel.setText(s"${eventDriver.current}")
     if(eventDriver.isLeave)
       nextEventLabel.setText("Конечное событие")
     else
-      nextEventLabel.setText(s"S${ eventDriver.nextN(nextAction) } ${eventDriver.next(nextAction)}")
+      nextEventLabel.setText(s"${eventDriver.next(nextAction)}")
   }
   renew()
   
@@ -117,7 +109,7 @@ object Lab2OTIVS extends App{
   
   aButton.addActionListener( _ => {
     if(eventDriver.isLeave) {}
-      else {
+    else {
       eventDriver.move(nextAction)
       nextAction = false
       renew()
@@ -130,7 +122,7 @@ object Lab2OTIVS extends App{
   val jPanel4 = new JPanel()
   val jPanel = new JPanel()
   jPanel.setLayout(new GridBagLayout())
-
+  
   jPanel1.add(curEventLabel)
   jPanel3.add(nextEventLabel)
   jPanel2.add(yButton)
